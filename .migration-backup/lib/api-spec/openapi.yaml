@@ -1,0 +1,1546 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Movia Immo - API de gestion immobilière
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: dashboard
+    description: Dashboard KPIs and stats
+  - name: properties
+    description: Property management
+  - name: tenants
+    description: Tenant management
+  - name: payments
+    description: Payment tracking
+  - name: contracts
+    description: Contract management
+  - name: maintenance
+    description: Maintenance tickets
+  - name: notifications
+    description: Notifications
+  - name: analytics
+    description: Analytics and reporting
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # Dashboard
+  /dashboard/kpis:
+    get:
+      operationId: getDashboardKpis
+      tags: [dashboard]
+      summary: Get dashboard KPIs
+      responses:
+        "200":
+          description: Dashboard KPIs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardKpis"
+
+  /dashboard/activity:
+    get:
+      operationId: getDashboardActivity
+      tags: [dashboard]
+      summary: Get recent activity feed
+      responses:
+        "200":
+          description: Activity list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
+
+  /dashboard/alerts:
+    get:
+      operationId: getDashboardAlerts
+      tags: [dashboard]
+      summary: Get active alerts
+      responses:
+        "200":
+          description: Alert list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+
+  /dashboard/revenue-chart:
+    get:
+      operationId: getDashboardRevenueChart
+      tags: [dashboard]
+      summary: Get monthly revenue chart data
+      responses:
+        "200":
+          description: Revenue chart data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RevenueChartPoint"
+
+  /dashboard/occupancy-chart:
+    get:
+      operationId: getDashboardOccupancyChart
+      tags: [dashboard]
+      summary: Get occupancy chart data by zone
+      responses:
+        "200":
+          description: Occupancy by zone
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OccupancyChartPoint"
+
+  # Properties
+  /properties:
+    get:
+      operationId: listProperties
+      tags: [properties]
+      summary: List all properties
+      parameters:
+        - in: query
+          name: zone
+          schema:
+            type: string
+        - in: query
+          name: type
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Property list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Property"
+    post:
+      operationId: createProperty
+      tags: [properties]
+      summary: Create a property
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePropertyBody"
+      responses:
+        "201":
+          description: Created property
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+
+  /properties/{id}:
+    get:
+      operationId: getProperty
+      tags: [properties]
+      summary: Get a property by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Property
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+    put:
+      operationId: updateProperty
+      tags: [properties]
+      summary: Update a property
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePropertyBody"
+      responses:
+        "200":
+          description: Updated property
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+    delete:
+      operationId: deleteProperty
+      tags: [properties]
+      summary: Delete a property
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /properties/stats/by-zone:
+    get:
+      operationId: getPropertiesStatsByZone
+      tags: [properties]
+      summary: Properties count and revenue by zone
+      responses:
+        "200":
+          description: Stats by zone
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ZoneStat"
+
+  # Tenants
+  /tenants:
+    get:
+      operationId: listTenants
+      tags: [tenants]
+      summary: List all tenants
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tenant list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tenant"
+    post:
+      operationId: createTenant
+      tags: [tenants]
+      summary: Create a tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTenantBody"
+      responses:
+        "201":
+          description: Created tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+
+  /tenants/{id}:
+    get:
+      operationId: getTenant
+      tags: [tenants]
+      summary: Get a tenant by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+    put:
+      operationId: updateTenant
+      tags: [tenants]
+      summary: Update a tenant
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTenantBody"
+      responses:
+        "200":
+          description: Updated tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+    delete:
+      operationId: deleteTenant
+      tags: [tenants]
+      summary: Delete a tenant
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /tenants/{id}/payments:
+    get:
+      operationId: getTenantPayments
+      tags: [tenants]
+      summary: Get payments for a specific tenant
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payments list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Payment"
+
+  # Payments
+  /payments:
+    get:
+      operationId: listPayments
+      tags: [payments]
+      summary: List all payments
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: month
+          schema:
+            type: string
+        - in: query
+          name: tenantId
+          schema:
+            type: integer
+        - in: query
+          name: propertyId
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payment list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Payment"
+    post:
+      operationId: createPayment
+      tags: [payments]
+      summary: Record a payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentBody"
+      responses:
+        "201":
+          description: Created payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  /payments/{id}:
+    get:
+      operationId: getPayment
+      tags: [payments]
+      summary: Get a payment by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+    put:
+      operationId: updatePayment
+      tags: [payments]
+      summary: Update a payment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentBody"
+      responses:
+        "200":
+          description: Updated payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  /payments/stats/summary:
+    get:
+      operationId: getPaymentsSummary
+      tags: [payments]
+      summary: Payment statistics summary (paid, late, partial totals)
+      responses:
+        "200":
+          description: Payment summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentSummary"
+
+  # Contracts
+  /contracts:
+    get:
+      operationId: listContracts
+      tags: [contracts]
+      summary: List all contracts
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: tenantId
+          schema:
+            type: integer
+        - in: query
+          name: propertyId
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contract list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contract"
+    post:
+      operationId: createContract
+      tags: [contracts]
+      summary: Create a contract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContractBody"
+      responses:
+        "201":
+          description: Created contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+
+  /contracts/{id}:
+    get:
+      operationId: getContract
+      tags: [contracts]
+      summary: Get a contract by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+    put:
+      operationId: updateContract
+      tags: [contracts]
+      summary: Update a contract
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContractBody"
+      responses:
+        "200":
+          description: Updated contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+
+  /contracts/expiring-soon:
+    get:
+      operationId: getExpiringContracts
+      tags: [contracts]
+      summary: Get contracts expiring within 60 days
+      responses:
+        "200":
+          description: Expiring contracts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contract"
+
+  # Maintenance
+  /maintenance:
+    get:
+      operationId: listMaintenanceTickets
+      tags: [maintenance]
+      summary: List maintenance tickets
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: priority
+          schema:
+            type: string
+        - in: query
+          name: propertyId
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ticket list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MaintenanceTicket"
+    post:
+      operationId: createMaintenanceTicket
+      tags: [maintenance]
+      summary: Create a maintenance ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMaintenanceTicketBody"
+      responses:
+        "201":
+          description: Created ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceTicket"
+
+  /maintenance/{id}:
+    get:
+      operationId: getMaintenanceTicket
+      tags: [maintenance]
+      summary: Get a maintenance ticket by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceTicket"
+    put:
+      operationId: updateMaintenanceTicket
+      tags: [maintenance]
+      summary: Update a maintenance ticket
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMaintenanceTicketBody"
+      responses:
+        "200":
+          description: Updated ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceTicket"
+
+  /maintenance/stats/by-status:
+    get:
+      operationId: getMaintenanceStatsByStatus
+      tags: [maintenance]
+      summary: Maintenance tickets count by status
+      responses:
+        "200":
+          description: Stats by status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatusCount"
+
+  # Notifications
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications
+      parameters:
+        - in: query
+          name: unreadOnly
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Notification list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{id}/read:
+    put:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark notification as read
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    put:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: All marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated:
+                    type: integer
+                required:
+                  - updated
+
+  # Analytics
+  /analytics/financial:
+    get:
+      operationId: getFinancialAnalytics
+      tags: [analytics]
+      summary: Financial analytics (revenue, expenses, profitability by month)
+      parameters:
+        - in: query
+          name: year
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Financial analytics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FinancialAnalyticsPoint"
+
+  /analytics/occupancy:
+    get:
+      operationId: getOccupancyAnalytics
+      tags: [analytics]
+      summary: Occupancy rate analytics by month
+      responses:
+        "200":
+          description: Occupancy analytics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OccupancyAnalyticsPoint"
+
+  /analytics/profitability:
+    get:
+      operationId: getProfitabilityAnalytics
+      tags: [analytics]
+      summary: Profitability per property
+      responses:
+        "200":
+          description: Profitability per property
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProfitabilityPoint"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    DashboardKpis:
+      type: object
+      properties:
+        totalProperties:
+          type: integer
+        occupiedProperties:
+          type: integer
+        totalTenants:
+          type: integer
+        monthlyRevenue:
+          type: number
+        unpaidRents:
+          type: integer
+        unpaidAmount:
+          type: number
+        occupancyRate:
+          type: number
+        maintenanceOpen:
+          type: integer
+        expiringContracts:
+          type: integer
+        collectionRate:
+          type: number
+      required:
+        - totalProperties
+        - occupiedProperties
+        - totalTenants
+        - monthlyRevenue
+        - unpaidRents
+        - unpaidAmount
+        - occupancyRate
+        - maintenanceOpen
+        - expiringContracts
+        - collectionRate
+
+    Activity:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [payment, maintenance, contract, tenant, property, notification]
+        description:
+          type: string
+        entityId:
+          type: integer
+        entityType:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - type
+        - description
+        - createdAt
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [unpaid, expiring_contract, maintenance_urgent, overdue]
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        title:
+          type: string
+        description:
+          type: string
+        entityId:
+          type: integer
+        entityType:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - type
+        - severity
+        - title
+        - description
+        - createdAt
+
+    RevenueChartPoint:
+      type: object
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+        collected:
+          type: number
+        pending:
+          type: number
+      required:
+        - month
+        - revenue
+        - collected
+        - pending
+
+    OccupancyChartPoint:
+      type: object
+      properties:
+        zone:
+          type: string
+        total:
+          type: integer
+        occupied:
+          type: integer
+        rate:
+          type: number
+      required:
+        - zone
+        - total
+        - occupied
+        - rate
+
+    Property:
+      type: object
+      properties:
+        id:
+          type: integer
+        reference:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+          enum: [appartement, villa, bureau, local_commercial, studio, riad]
+        zone:
+          type: string
+          enum: [Malabata, Cap_Spartel, Medina, Asilah, Tetouan, Martil, Fnideq, Centre_Ville, Iberia]
+        address:
+          type: string
+        floor:
+          type: integer
+        surface:
+          type: number
+        rooms:
+          type: integer
+        bathrooms:
+          type: integer
+        rentAmount:
+          type: number
+        chargesAmount:
+          type: number
+        depositAmount:
+          type: number
+        status:
+          type: string
+          enum: [disponible, occupe, maintenance, reserve]
+        amenities:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          items:
+            type: string
+        videoUrl:
+          type: string
+          description: URL de la vidéo du bien (Vimeo, YouTube, etc.)
+        latitude:
+          type: number
+        longitude:
+          type: number
+        description:
+          type: string
+        currentTenantId:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - reference
+        - title
+        - type
+        - zone
+        - address
+        - surface
+        - rentAmount
+        - status
+        - createdAt
+
+    CreatePropertyBody:
+      type: object
+      properties:
+        title:
+          type: string
+        type:
+          type: string
+        zone:
+          type: string
+        address:
+          type: string
+        floor:
+          type: integer
+        surface:
+          type: number
+        rooms:
+          type: integer
+        bathrooms:
+          type: integer
+        rentAmount:
+          type: number
+        chargesAmount:
+          type: number
+        depositAmount:
+          type: number
+        status:
+          type: string
+        amenities:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          items:
+            type: string
+        videoUrl:
+          type: string
+          description: URL de la vidéo du bien (Vimeo, YouTube, etc.)
+        latitude:
+          type: number
+        longitude:
+          type: number
+        description:
+          type: string
+      required:
+        - title
+        - type
+        - zone
+        - address
+        - surface
+        - rentAmount
+        - status
+
+    ZoneStat:
+      type: object
+      properties:
+        zone:
+          type: string
+        count:
+          type: integer
+        occupied:
+          type: integer
+        totalRevenue:
+          type: number
+      required:
+        - zone
+        - count
+        - occupied
+        - totalRevenue
+
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        cin:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        profession:
+          type: string
+        nationality:
+          type: string
+        dateOfBirth:
+          type: string
+        emergencyContact:
+          type: string
+        emergencyPhone:
+          type: string
+        status:
+          type: string
+          enum: [actif, inactif, en_retard, expulse]
+        propertyId:
+          type: integer
+        propertyTitle:
+          type: string
+        rentAmount:
+          type: number
+        balance:
+          type: number
+        paymentScore:
+          type: integer
+        documents:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - firstName
+        - lastName
+        - cin
+        - email
+        - phone
+        - status
+        - createdAt
+
+    CreateTenantBody:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        cin:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        profession:
+          type: string
+        nationality:
+          type: string
+        dateOfBirth:
+          type: string
+        emergencyContact:
+          type: string
+        emergencyPhone:
+          type: string
+        status:
+          type: string
+        propertyId:
+          type: integer
+        notes:
+          type: string
+      required:
+        - firstName
+        - lastName
+        - cin
+        - email
+        - phone
+        - status
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: integer
+        reference:
+          type: string
+        tenantId:
+          type: integer
+        tenantName:
+          type: string
+        propertyId:
+          type: integer
+        propertyTitle:
+          type: string
+        amount:
+          type: number
+        paidAmount:
+          type: number
+        dueDate:
+          type: string
+        paidDate:
+          type: string
+        status:
+          type: string
+          enum: [paye, en_retard, partiel, en_attente, annule]
+        paymentMethod:
+          type: string
+          enum: [virement, cheque, especes, mobile_payment]
+        penaltyAmount:
+          type: number
+        receiptNumber:
+          type: string
+        notes:
+          type: string
+        month:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - reference
+        - tenantId
+        - propertyId
+        - amount
+        - dueDate
+        - status
+        - month
+        - createdAt
+
+    CreatePaymentBody:
+      type: object
+      properties:
+        tenantId:
+          type: integer
+        propertyId:
+          type: integer
+        amount:
+          type: number
+        paidAmount:
+          type: number
+        dueDate:
+          type: string
+        paidDate:
+          type: string
+        status:
+          type: string
+        paymentMethod:
+          type: string
+        penaltyAmount:
+          type: number
+        notes:
+          type: string
+        month:
+          type: string
+      required:
+        - tenantId
+        - propertyId
+        - amount
+        - dueDate
+        - status
+        - month
+
+    PaymentSummary:
+      type: object
+      properties:
+        totalExpected:
+          type: number
+        totalCollected:
+          type: number
+        totalPending:
+          type: number
+        totalLate:
+          type: number
+        totalLateAmount:
+          type: number
+        totalPartial:
+          type: number
+        collectionRate:
+          type: number
+        paymentsCount:
+          type: integer
+        lateCount:
+          type: integer
+        partialCount:
+          type: integer
+      required:
+        - totalExpected
+        - totalCollected
+        - totalPending
+        - totalLate
+        - totalLateAmount
+        - totalPartial
+        - collectionRate
+        - paymentsCount
+        - lateCount
+        - partialCount
+
+    Contract:
+      type: object
+      properties:
+        id:
+          type: integer
+        reference:
+          type: string
+        tenantId:
+          type: integer
+        tenantName:
+          type: string
+        propertyId:
+          type: integer
+        propertyTitle:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        rentAmount:
+          type: number
+        chargesAmount:
+          type: number
+        depositAmount:
+          type: number
+        depositPaid:
+          type: boolean
+        type:
+          type: string
+          enum: [bail_habitation, bail_commercial, saisonnier, courte_duree]
+        status:
+          type: string
+          enum: [actif, expire, resilie, renouvele, en_attente]
+        renewalNoticeDate:
+          type: string
+        specialConditions:
+          type: string
+        witnessName:
+          type: string
+        witnessPhone:
+          type: string
+        daysUntilExpiry:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - reference
+        - tenantId
+        - propertyId
+        - startDate
+        - endDate
+        - rentAmount
+        - type
+        - status
+        - createdAt
+
+    CreateContractBody:
+      type: object
+      properties:
+        tenantId:
+          type: integer
+        propertyId:
+          type: integer
+        startDate:
+          type: string
+        endDate:
+          type: string
+        rentAmount:
+          type: number
+        chargesAmount:
+          type: number
+        depositAmount:
+          type: number
+        depositPaid:
+          type: boolean
+        type:
+          type: string
+        status:
+          type: string
+        specialConditions:
+          type: string
+        witnessName:
+          type: string
+        witnessPhone:
+          type: string
+      required:
+        - tenantId
+        - propertyId
+        - startDate
+        - endDate
+        - rentAmount
+        - type
+        - status
+
+    MaintenanceTicket:
+      type: object
+      properties:
+        id:
+          type: integer
+        reference:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        propertyId:
+          type: integer
+        propertyTitle:
+          type: string
+        tenantId:
+          type: integer
+        tenantName:
+          type: string
+        category:
+          type: string
+          enum: [plomberie, electricite, peinture, menuiserie, climatisation, nettoyage, serrurerie, autre]
+        priority:
+          type: string
+          enum: [faible, normale, haute, urgente]
+        status:
+          type: string
+          enum: [ouvert, en_cours, en_attente_pieces, resolu, ferme]
+        technicianName:
+          type: string
+        technicianPhone:
+          type: string
+        estimatedCost:
+          type: number
+        actualCost:
+          type: number
+        scheduledDate:
+          type: string
+        completedDate:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - reference
+        - title
+        - description
+        - propertyId
+        - category
+        - priority
+        - status
+        - createdAt
+
+    CreateMaintenanceTicketBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        propertyId:
+          type: integer
+        tenantId:
+          type: integer
+        category:
+          type: string
+        priority:
+          type: string
+        status:
+          type: string
+        technicianName:
+          type: string
+        technicianPhone:
+          type: string
+        estimatedCost:
+          type: number
+        actualCost:
+          type: number
+        scheduledDate:
+          type: string
+        completedDate:
+          type: string
+        notes:
+          type: string
+      required:
+        - title
+        - description
+        - propertyId
+        - category
+        - priority
+        - status
+
+    StatusCount:
+      type: object
+      properties:
+        status:
+          type: string
+        count:
+          type: integer
+        totalCost:
+          type: number
+      required:
+        - status
+        - count
+        - totalCost
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [payment_due, payment_received, contract_expiring, maintenance_update, system, reminder]
+        title:
+          type: string
+        message:
+          type: string
+        isRead:
+          type: boolean
+        entityId:
+          type: integer
+        entityType:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - type
+        - title
+        - message
+        - isRead
+        - createdAt
+
+    FinancialAnalyticsPoint:
+      type: object
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+        expenses:
+          type: number
+        profit:
+          type: number
+        collectionRate:
+          type: number
+      required:
+        - month
+        - revenue
+        - expenses
+        - profit
+        - collectionRate
+
+    OccupancyAnalyticsPoint:
+      type: object
+      properties:
+        month:
+          type: string
+        occupancyRate:
+          type: number
+        occupied:
+          type: integer
+        total:
+          type: integer
+      required:
+        - month
+        - occupancyRate
+        - occupied
+        - total
+
+    ProfitabilityPoint:
+      type: object
+      properties:
+        propertyId:
+          type: integer
+        propertyTitle:
+          type: string
+        zone:
+          type: string
+        annualRevenue:
+          type: number
+        annualExpenses:
+          type: number
+        netProfit:
+          type: number
+        roi:
+          type: number
+      required:
+        - propertyId
+        - propertyTitle
+        - zone
+        - annualRevenue
+        - annualExpenses
+        - netProfit
+        - roi
