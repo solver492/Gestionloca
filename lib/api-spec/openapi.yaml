@@ -945,6 +945,9 @@ components:
           type: array
           items:
             type: string
+        videoUrl:
+          type: string
+          description: URL de la vidéo du bien (Vimeo, YouTube, etc.)
         latitude:
           type: number
         longitude:
@@ -1002,6 +1005,9 @@ components:
           type: array
           items:
             type: string
+        videoUrl:
+          type: string
+          description: URL de la vidéo du bien (Vimeo, YouTube, etc.)
         latitude:
           type: number
         longitude:

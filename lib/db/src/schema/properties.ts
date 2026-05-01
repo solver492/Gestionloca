@@ -19,6 +19,7 @@ export const propertiesTable = pgTable("properties", {
   status: text("status").notNull().default("disponible"),
   amenities: text("amenities").array().default([]),
   photos: text("photos").array().default([]),
+  videoUrl: text("video_url"),
   latitude: numeric("latitude", { precision: 10, scale: 7 }),
   longitude: numeric("longitude", { precision: 10, scale: 7 }),
   description: text("description"),

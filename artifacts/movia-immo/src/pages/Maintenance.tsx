@@ -3,30 +3,28 @@ import { useListMaintenanceTickets, getListMaintenanceTicketsQueryKey, useGetMai
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Plus, MapPin, Calendar, Clock, AlertTriangle, CheckCircle, Wrench } from "lucide-react";
+import { Plus, MapPin, Calendar, Wrench, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate } from "@/lib/format";
+import { MaintenanceFormDialog } from "@/components/forms/MaintenanceFormDialog";
 
 export default function Maintenance() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+
+  const openCreate = () => { setSelectedTicket(null); setDialogOpen(true); };
+  const openEdit = (ticket: any) => { setSelectedTicket(ticket); setDialogOpen(true); };
   
-  const { data: tickets, isLoading: isLoadingTickets } = useListMaintenanceTickets(
-    { 
-      status: statusFilter !== "all" ? statusFilter : undefined,
-      priority: priorityFilter !== "all" ? priorityFilter : undefined
-    },
-    { 
-      query: { 
-        queryKey: getListMaintenanceTicketsQueryKey({ 
-          status: statusFilter !== "all" ? statusFilter : undefined,
-          priority: priorityFilter !== "all" ? priorityFilter : undefined
-        }) 
-      } 
-    }
-  );
+  const params = {
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    priority: priorityFilter !== "all" ? priorityFilter : undefined,
+  };
+  const { data: tickets, isLoading: isLoadingTickets } = useListMaintenanceTickets(params, {
+    query: { queryKey: getListMaintenanceTicketsQueryKey(params) }
+  });
 
   const { data: stats, isLoading: isLoadingStats } = useGetMaintenanceStatsByStatus({
     query: { queryKey: getGetMaintenanceStatsByStatusQueryKey() }
@@ -39,7 +37,7 @@ export default function Maintenance() {
           <h1 className="text-3xl font-serif font-bold text-foreground">Maintenance</h1>
           <p className="text-muted-foreground">Gestion des interventions et tickets de maintenance.</p>
         </div>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button onClick={openCreate} className="bg-primary text-primary-foreground hover:bg-primary/90">
           <Plus className="h-4 w-4 mr-2" />
           Nouveau ticket
         </Button>
@@ -103,7 +101,7 @@ export default function Maintenance() {
           Array(6).fill(0).map((_, i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)
         ) : tickets && tickets.length > 0 ? (
           tickets.map((ticket) => (
-            <Card key={ticket.id} className="overflow-hidden hover:border-primary/50 transition-colors bg-card/50 backdrop-blur border-card-border flex flex-col">
+            <Card key={ticket.id} onClick={() => openEdit(ticket)} className="overflow-hidden hover:border-primary/50 transition-colors bg-card/50 backdrop-blur border-card-border flex flex-col cursor-pointer group">
               <CardContent className="p-5 flex-1 flex flex-col">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex gap-2 items-center">
@@ -155,7 +153,7 @@ export default function Maintenance() {
                   </Badge>
                   
                   <Button variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/10 h-8">
-                    Voir détails
+                    <Pencil className="h-3.5 w-3.5 mr-1.5" /> Modifier
                   </Button>
                 </div>
               </CardContent>
@@ -165,10 +163,19 @@ export default function Maintenance() {
           <div className="col-span-full py-12 text-center border border-dashed border-card-border rounded-xl bg-card/20">
             <Wrench className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-medium text-foreground">Aucun ticket trouvé</h3>
-            <p className="text-muted-foreground mt-1">Aucune intervention de maintenance ne correspond à vos critères.</p>
+            <p className="text-muted-foreground mt-1">
+              {statusFilter !== "all" || priorityFilter !== "all" ? "Essayez de modifier vos filtres." : "Créez votre premier ticket de maintenance."}
+            </p>
+            {statusFilter === "all" && priorityFilter === "all" && (
+              <Button onClick={openCreate} className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90">
+                <Plus className="h-4 w-4 mr-2" /> Nouveau ticket
+              </Button>
+            )}
           </div>
         )}
       </div>
+
+      <MaintenanceFormDialog open={dialogOpen} onOpenChange={setDialogOpen} ticket={selectedTicket} />
     </div>
   );
 }

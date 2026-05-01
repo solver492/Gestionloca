@@ -1,7 +1,22 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { paymentsTable, tenantsTable, propertiesTable, insertPaymentSchema } from "@workspace/db";
+import { paymentsTable, tenantsTable, propertiesTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
+import { z } from "zod";
+
+const paymentBodySchema = z.object({
+  tenantId: z.coerce.number(),
+  propertyId: z.coerce.number(),
+  amount: z.coerce.number(),
+  paidAmount: z.coerce.number().optional().default(0),
+  dueDate: z.string(),
+  paidDate: z.string().optional(),
+  status: z.string().default("en_attente"),
+  paymentMethod: z.string().optional(),
+  penaltyAmount: z.coerce.number().optional().default(0),
+  notes: z.string().optional(),
+  month: z.string(),
+});
 
 const router = Router();
 
@@ -41,12 +56,20 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const parsed = insertPaymentSchema.safeParse(req.body);
+    const parsed = paymentBodySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid data", details: parsed.error });
     const count = await db.select({ count: sql`count(*)` }).from(paymentsTable);
     const ref = `PAY-${String(Number(count[0].count) + 1).padStart(5, "0")}`;
     const receiptNumber = `REC-${Date.now()}`;
-    const [created] = await db.insert(paymentsTable).values({ ...parsed.data, reference: ref, receiptNumber }).returning();
+    const { amount, paidAmount, penaltyAmount, ...rest } = parsed.data;
+    const [created] = await db.insert(paymentsTable).values({
+      ...rest,
+      reference: ref,
+      receiptNumber,
+      amount: amount.toString(),
+      paidAmount: (paidAmount ?? 0).toString(),
+      penaltyAmount: (penaltyAmount ?? 0).toString(),
+    }).returning();
     res.status(201).json(formatPayment(created));
   } catch (err) {
     req.log.error({ err }, "Error creating payment");
@@ -102,9 +125,16 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const parsed = insertPaymentSchema.safeParse(req.body);
+    const parsed = paymentBodySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid data", details: parsed.error });
-    const [updated] = await db.update(paymentsTable).set({ ...parsed.data, updatedAt: new Date() }).where(eq(paymentsTable.id, id)).returning();
+    const { amount, paidAmount, penaltyAmount, ...rest } = parsed.data;
+    const [updated] = await db.update(paymentsTable).set({
+      ...rest,
+      amount: amount.toString(),
+      paidAmount: (paidAmount ?? 0).toString(),
+      penaltyAmount: (penaltyAmount ?? 0).toString(),
+      updatedAt: new Date(),
+    }).where(eq(paymentsTable.id, id)).returning();
     if (!updated) return res.status(404).json({ error: "Payment not found" });
     res.json(formatPayment(updated));
   } catch (err) {

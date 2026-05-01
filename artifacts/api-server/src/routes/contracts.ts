@@ -1,7 +1,25 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { contractsTable, tenantsTable, propertiesTable, insertContractSchema } from "@workspace/db";
+import { contractsTable, tenantsTable, propertiesTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
+import { z } from "zod";
+
+const contractBodySchema = z.object({
+  tenantId: z.coerce.number(),
+  propertyId: z.coerce.number(),
+  startDate: z.string(),
+  endDate: z.string(),
+  rentAmount: z.coerce.number(),
+  chargesAmount: z.coerce.number().optional().default(0),
+  depositAmount: z.coerce.number().optional().default(0),
+  depositPaid: z.boolean().optional().default(false),
+  type: z.string().default("bail_habitation"),
+  status: z.string().default("actif"),
+  renewalNoticeDate: z.string().optional(),
+  specialConditions: z.string().optional(),
+  witnessName: z.string().optional(),
+  witnessPhone: z.string().optional(),
+});
 
 const router = Router();
 
@@ -44,11 +62,18 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const parsed = insertContractSchema.safeParse(req.body);
+    const parsed = contractBodySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid data", details: parsed.error });
     const count = await db.select({ count: sql`count(*)` }).from(contractsTable);
     const ref = `CONT-${String(Number(count[0].count) + 1).padStart(4, "0")}`;
-    const [created] = await db.insert(contractsTable).values({ ...parsed.data, reference: ref }).returning();
+    const { rentAmount, chargesAmount, depositAmount, ...rest } = parsed.data;
+    const [created] = await db.insert(contractsTable).values({
+      ...rest,
+      reference: ref,
+      rentAmount: rentAmount.toString(),
+      chargesAmount: (chargesAmount ?? 0).toString(),
+      depositAmount: (depositAmount ?? 0).toString(),
+    }).returning();
     res.status(201).json(formatContract(created));
   } catch (err) {
     req.log.error({ err }, "Error creating contract");
@@ -94,9 +119,16 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const parsed = insertContractSchema.safeParse(req.body);
+    const parsed = contractBodySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid data", details: parsed.error });
-    const [updated] = await db.update(contractsTable).set({ ...parsed.data, updatedAt: new Date() }).where(eq(contractsTable.id, id)).returning();
+    const { rentAmount, chargesAmount, depositAmount, ...rest } = parsed.data;
+    const [updated] = await db.update(contractsTable).set({
+      ...rest,
+      rentAmount: rentAmount.toString(),
+      chargesAmount: (chargesAmount ?? 0).toString(),
+      depositAmount: (depositAmount ?? 0).toString(),
+      updatedAt: new Date(),
+    }).where(eq(contractsTable.id, id)).returning();
     if (!updated) return res.status(404).json({ error: "Contract not found" });
     res.json(formatContract(updated));
   } catch (err) {

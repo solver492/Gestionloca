@@ -1,7 +1,25 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { maintenanceTable, propertiesTable, tenantsTable, insertMaintenanceSchema } from "@workspace/db";
+import { maintenanceTable, propertiesTable, tenantsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
+import { z } from "zod";
+
+const maintenanceBodySchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  propertyId: z.coerce.number(),
+  tenantId: z.coerce.number().optional(),
+  category: z.string().default("autre"),
+  priority: z.string().default("normale"),
+  status: z.string().default("ouvert"),
+  technicianName: z.string().optional(),
+  technicianPhone: z.string().optional(),
+  estimatedCost: z.coerce.number().optional(),
+  actualCost: z.coerce.number().optional(),
+  scheduledDate: z.string().optional(),
+  completedDate: z.string().optional(),
+  notes: z.string().optional(),
+});
 
 const router = Router();
 
@@ -39,11 +57,17 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const parsed = insertMaintenanceSchema.safeParse(req.body);
+    const parsed = maintenanceBodySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid data", details: parsed.error });
     const count = await db.select({ count: sql`count(*)` }).from(maintenanceTable);
     const ref = `MAINT-${String(Number(count[0].count) + 1).padStart(4, "0")}`;
-    const [created] = await db.insert(maintenanceTable).values({ ...parsed.data, reference: ref }).returning();
+    const { estimatedCost, actualCost, ...rest } = parsed.data;
+    const [created] = await db.insert(maintenanceTable).values({
+      ...rest,
+      reference: ref,
+      estimatedCost: estimatedCost?.toString(),
+      actualCost: actualCost?.toString(),
+    }).returning();
     res.status(201).json(formatTicket(created));
   } catch (err) {
     req.log.error({ err }, "Error creating maintenance ticket");
@@ -84,9 +108,15 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const parsed = insertMaintenanceSchema.safeParse(req.body);
+    const parsed = maintenanceBodySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid data", details: parsed.error });
-    const [updated] = await db.update(maintenanceTable).set({ ...parsed.data, updatedAt: new Date() }).where(eq(maintenanceTable.id, id)).returning();
+    const { estimatedCost, actualCost, ...rest } = parsed.data;
+    const [updated] = await db.update(maintenanceTable).set({
+      ...rest,
+      estimatedCost: estimatedCost?.toString(),
+      actualCost: actualCost?.toString(),
+      updatedAt: new Date(),
+    }).where(eq(maintenanceTable.id, id)).returning();
     if (!updated) return res.status(404).json({ error: "Ticket not found" });
     res.json(formatTicket(updated));
   } catch (err) {

@@ -137,6 +137,8 @@ export interface Property {
   status: PropertyStatus;
   amenities?: string[];
   photos?: string[];
+  /** URL de la vidéo du bien (Vimeo, YouTube, etc.) */
+  videoUrl?: string;
   latitude?: number;
   longitude?: number;
   description?: string;
@@ -159,6 +161,8 @@ export interface CreatePropertyBody {
   status: string;
   amenities?: string[];
   photos?: string[];
+  /** URL de la vidéo du bien (Vimeo, YouTube, etc.) */
+  videoUrl?: string;
   latitude?: number;
   longitude?: number;
   description?: string;

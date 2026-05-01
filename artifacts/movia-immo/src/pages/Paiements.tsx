@@ -4,14 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Plus, FileText, Download } from "lucide-react";
+import { Plus, Download, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaymentFormDialog } from "@/components/forms/PaymentFormDialog";
 
 export default function Paiements() {
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
+
+  const openCreate = () => { setSelectedPayment(null); setDialogOpen(true); };
+  const openEdit = (payment: any) => { setSelectedPayment(payment); setDialogOpen(true); };
   
   const { data: payments, isLoading: isLoadingPayments } = useListPayments(
     { status: statusFilter !== "all" ? statusFilter : undefined },
@@ -29,7 +34,7 @@ export default function Paiements() {
           <h1 className="text-3xl font-serif font-bold text-foreground">Paiements</h1>
           <p className="text-muted-foreground">Suivi des loyers et historiques de paiement.</p>
         </div>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button onClick={openCreate} className="bg-primary text-primary-foreground hover:bg-primary/90">
           <Plus className="h-4 w-4 mr-2" />
           Enregistrer un paiement
         </Button>
@@ -151,15 +156,21 @@ export default function Paiements() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      {payment.status === 'paye' || payment.status === 'partiel' ? (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10">
-                          <Download className="h-4 w-4" />
+                      <div className="flex items-center justify-end gap-1">
+                        {payment.status === 'paye' && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                          onClick={() => openEdit(payment)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                      ) : (
-                        <Button variant="outline" size="sm" className="h-8 text-xs border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground">
-                          Encaisser
-                        </Button>
-                      )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -174,6 +185,8 @@ export default function Paiements() {
           </Table>
         </div>
       </Card>
+
+      <PaymentFormDialog open={dialogOpen} onOpenChange={setDialogOpen} payment={selectedPayment} />
     </div>
   );
 }

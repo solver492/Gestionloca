@@ -144,6 +144,10 @@ export const ListPropertiesResponseItem = zod.object({
   status: zod.enum(["disponible", "occupe", "maintenance", "reserve"]),
   amenities: zod.array(zod.string()).optional(),
   photos: zod.array(zod.string()).optional(),
+  videoUrl: zod
+    .string()
+    .optional()
+    .describe("URL de la vidéo du bien (Vimeo, YouTube, etc.)"),
   latitude: zod.number().optional(),
   longitude: zod.number().optional(),
   description: zod.string().optional(),
@@ -170,6 +174,10 @@ export const CreatePropertyBody = zod.object({
   status: zod.string(),
   amenities: zod.array(zod.string()).optional(),
   photos: zod.array(zod.string()).optional(),
+  videoUrl: zod
+    .string()
+    .optional()
+    .describe("URL de la vidéo du bien (Vimeo, YouTube, etc.)"),
   latitude: zod.number().optional(),
   longitude: zod.number().optional(),
   description: zod.string().optional(),
@@ -216,6 +224,10 @@ export const GetPropertyResponse = zod.object({
   status: zod.enum(["disponible", "occupe", "maintenance", "reserve"]),
   amenities: zod.array(zod.string()).optional(),
   photos: zod.array(zod.string()).optional(),
+  videoUrl: zod
+    .string()
+    .optional()
+    .describe("URL de la vidéo du bien (Vimeo, YouTube, etc.)"),
   latitude: zod.number().optional(),
   longitude: zod.number().optional(),
   description: zod.string().optional(),
@@ -245,6 +257,10 @@ export const UpdatePropertyBody = zod.object({
   status: zod.string(),
   amenities: zod.array(zod.string()).optional(),
   photos: zod.array(zod.string()).optional(),
+  videoUrl: zod
+    .string()
+    .optional()
+    .describe("URL de la vidéo du bien (Vimeo, YouTube, etc.)"),
   latitude: zod.number().optional(),
   longitude: zod.number().optional(),
   description: zod.string().optional(),
@@ -284,6 +300,10 @@ export const UpdatePropertyResponse = zod.object({
   status: zod.enum(["disponible", "occupe", "maintenance", "reserve"]),
   amenities: zod.array(zod.string()).optional(),
   photos: zod.array(zod.string()).optional(),
+  videoUrl: zod
+    .string()
+    .optional()
+    .describe("URL de la vidéo du bien (Vimeo, YouTube, etc.)"),
   latitude: zod.number().optional(),
   longitude: zod.number().optional(),
   description: zod.string().optional(),

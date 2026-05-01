@@ -1,7 +1,24 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { tenantsTable, propertiesTable, paymentsTable, insertTenantSchema } from "@workspace/db";
+import { tenantsTable, propertiesTable, paymentsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
+import { z } from "zod";
+
+const tenantBodySchema = z.object({
+  firstName: z.string(),
+  lastName: z.string(),
+  cin: z.string(),
+  email: z.string().default(""),
+  phone: z.string(),
+  profession: z.string().optional(),
+  nationality: z.string().optional().default("Marocaine"),
+  dateOfBirth: z.string().optional(),
+  emergencyContact: z.string().optional(),
+  emergencyPhone: z.string().optional(),
+  status: z.string().default("actif"),
+  propertyId: z.coerce.number().optional(),
+  notes: z.string().optional(),
+});
 
 const router = Router();
 
@@ -36,7 +53,7 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const parsed = insertTenantSchema.safeParse(req.body);
+    const parsed = tenantBodySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid data", details: parsed.error });
     const [created] = await db.insert(tenantsTable).values(parsed.data).returning();
     res.status(201).json({
@@ -77,7 +94,7 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const parsed = insertTenantSchema.safeParse(req.body);
+    const parsed = tenantBodySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid data", details: parsed.error });
     const [updated] = await db.update(tenantsTable).set({ ...parsed.data, updatedAt: new Date() }).where(eq(tenantsTable.id, id)).returning();
     if (!updated) return res.status(404).json({ error: "Tenant not found" });

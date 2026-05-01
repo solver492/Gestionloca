@@ -1,18 +1,24 @@
 import { useState } from "react";
 import { useListTenants, getListTenantsQueryKey } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, User, Phone, MapPin, Building2, CreditCard } from "lucide-react";
+import { Search, Plus, User, Phone, Building2, CreditCard } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { TenantFormDialog } from "@/components/forms/TenantFormDialog";
 
 export default function Locataires() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState<any>(null);
+
+  const openCreate = () => { setSelectedTenant(null); setDialogOpen(true); };
+  const openEdit = (tenant: any) => { setSelectedTenant(tenant); setDialogOpen(true); };
 
   const { data: tenants, isLoading } = useListTenants(
     { search: searchTerm || undefined, status: statusFilter !== "all" ? statusFilter : undefined },
@@ -26,7 +32,7 @@ export default function Locataires() {
           <h1 className="text-3xl font-serif font-bold text-foreground">Locataires</h1>
           <p className="text-muted-foreground">Gestion des locataires et de leurs dossiers.</p>
         </div>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button onClick={openCreate} className="bg-primary text-primary-foreground hover:bg-primary/90">
           <Plus className="h-4 w-4 mr-2" />
           Ajouter un locataire
         </Button>
@@ -61,7 +67,7 @@ export default function Locataires() {
           Array(6).fill(0).map((_, i) => <Skeleton key={i} className="h-64 w-full rounded-xl" />)
         ) : tenants && tenants.length > 0 ? (
           tenants.map((tenant) => (
-            <Card key={tenant.id} className="overflow-hidden hover:border-primary/50 transition-colors bg-card/50 backdrop-blur border-card-border group cursor-pointer">
+            <Card key={tenant.id} onClick={() => openEdit(tenant)} className="overflow-hidden hover:border-primary/50 transition-colors bg-card/50 backdrop-blur border-card-border group cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
@@ -138,10 +144,19 @@ export default function Locataires() {
           <div className="col-span-full py-12 text-center border border-dashed border-card-border rounded-xl bg-card/20">
             <User className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-medium text-foreground">Aucun locataire trouvé</h3>
-            <p className="text-muted-foreground mt-1">Essayez de modifier vos filtres de recherche.</p>
+            <p className="text-muted-foreground mt-1">
+              {searchTerm || statusFilter !== "all" ? "Essayez de modifier vos filtres." : "Commencez par ajouter votre premier locataire."}
+            </p>
+            {!searchTerm && statusFilter === "all" && (
+              <Button onClick={openCreate} className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90">
+                <Plus className="h-4 w-4 mr-2" /> Ajouter un locataire
+              </Button>
+            )}
           </div>
         )}
       </div>
+
+      <TenantFormDialog open={dialogOpen} onOpenChange={setDialogOpen} tenant={selectedTenant} />
     </div>
   );
 }

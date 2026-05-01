@@ -4,15 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Plus, AlertCircle, FileSignature, CheckCircle2 } from "lucide-react";
+import { Plus, AlertCircle, FileSignature, CheckCircle2, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ContractFormDialog } from "@/components/forms/ContractFormDialog";
 
 export default function Contrats() {
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<any>(null);
+
+  const openCreate = () => { setSelectedContract(null); setDialogOpen(true); };
+  const openEdit = (contract: any) => { setSelectedContract(contract); setDialogOpen(true); };
   
   const { data: contracts, isLoading: isLoadingContracts } = useListContracts(
     { status: statusFilter !== "all" ? statusFilter : undefined },
@@ -30,7 +35,7 @@ export default function Contrats() {
           <h1 className="text-3xl font-serif font-bold text-foreground">Contrats</h1>
           <p className="text-muted-foreground">Gestion des baux et renouvellements.</p>
         </div>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button onClick={openCreate} className="bg-primary text-primary-foreground hover:bg-primary/90">
           <Plus className="h-4 w-4 mr-2" />
           Nouveau contrat
         </Button>
@@ -128,8 +133,13 @@ export default function Contrats() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" className="h-8 text-primary hover:text-primary hover:bg-primary/10">
-                            Détails
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                            onClick={() => openEdit(contract)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -177,11 +187,12 @@ export default function Contrats() {
                         <span className="font-medium text-foreground">{formatDate(contract.endDate)}</span>
                       </div>
                       <div className="flex gap-2 mt-4 pt-2">
-                        <Button variant="outline" className="flex-1 text-xs h-8 border-primary/20 hover:bg-primary/10">
-                          <FileSignature className="h-3 w-3 mr-1" /> Renouveler
-                        </Button>
-                        <Button variant="outline" className="flex-1 text-xs h-8 text-destructive border-destructive/20 hover:bg-destructive/10">
-                          Résilier
+                        <Button
+                          variant="outline"
+                          className="flex-1 text-xs h-8 border-primary/20 hover:bg-primary/10"
+                          onClick={() => openEdit(contract)}
+                        >
+                          <FileSignature className="h-3 w-3 mr-1" /> Modifier
                         </Button>
                       </div>
                     </div>
@@ -198,6 +209,8 @@ export default function Contrats() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <ContractFormDialog open={dialogOpen} onOpenChange={setDialogOpen} contract={selectedContract} />
     </div>
   );
 }

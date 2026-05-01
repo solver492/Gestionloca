@@ -1,7 +1,29 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { propertiesTable, tenantsTable, insertPropertySchema } from "@workspace/db";
-import { eq, like, and, sql } from "drizzle-orm";
+import { propertiesTable } from "@workspace/db";
+import { eq, sql } from "drizzle-orm";
+import { z } from "zod";
+
+const propertyBodySchema = z.object({
+  title: z.string(),
+  type: z.string(),
+  zone: z.string(),
+  address: z.string(),
+  floor: z.coerce.number().optional(),
+  surface: z.coerce.number(),
+  rooms: z.coerce.number().optional(),
+  bathrooms: z.coerce.number().optional(),
+  rentAmount: z.coerce.number(),
+  chargesAmount: z.coerce.number().optional(),
+  depositAmount: z.coerce.number().optional(),
+  status: z.string().default("disponible"),
+  amenities: z.array(z.string()).optional().default([]),
+  photos: z.array(z.string()).optional().default([]),
+  videoUrl: z.string().optional(),
+  latitude: z.coerce.number().optional(),
+  longitude: z.coerce.number().optional(),
+  description: z.string().optional(),
+});
 
 const router = Router();
 
@@ -38,19 +60,31 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const parsed = insertPropertySchema.safeParse(req.body);
+    const parsed = propertyBodySchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid data", details: parsed.error });
     }
     const count = await db.select({ count: sql`count(*)` }).from(propertiesTable);
     const ref = `BIEN-${String(Number(count[0].count) + 1).padStart(4, "0")}`;
-    const [created] = await db.insert(propertiesTable).values({ ...parsed.data, reference: ref }).returning();
+    const { surface, rentAmount, chargesAmount, depositAmount, latitude, longitude, ...rest } = parsed.data;
+    const [created] = await db.insert(propertiesTable).values({
+      ...rest,
+      reference: ref,
+      surface: surface.toString(),
+      rentAmount: rentAmount.toString(),
+      chargesAmount: chargesAmount?.toString() ?? "0",
+      depositAmount: depositAmount?.toString() ?? "0",
+      latitude: latitude?.toString(),
+      longitude: longitude?.toString(),
+    }).returning();
     res.status(201).json({
       ...created,
       surface: parseFloat(created.surface),
       rentAmount: parseFloat(created.rentAmount),
       chargesAmount: parseFloat(created.chargesAmount || "0"),
       depositAmount: parseFloat(created.depositAmount || "0"),
+      latitude: created.latitude ? parseFloat(created.latitude) : null,
+      longitude: created.longitude ? parseFloat(created.longitude) : null,
       createdAt: created.createdAt.toISOString(),
     });
   } catch (err) {
@@ -102,9 +136,19 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const parsed = insertPropertySchema.safeParse(req.body);
+    const parsed = propertyBodySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid data", details: parsed.error });
-    const [updated] = await db.update(propertiesTable).set({ ...parsed.data, updatedAt: new Date() }).where(eq(propertiesTable.id, id)).returning();
+    const { surface, rentAmount, chargesAmount, depositAmount, latitude, longitude, ...rest } = parsed.data;
+    const [updated] = await db.update(propertiesTable).set({
+      ...rest,
+      surface: surface.toString(),
+      rentAmount: rentAmount.toString(),
+      chargesAmount: chargesAmount?.toString() ?? "0",
+      depositAmount: depositAmount?.toString() ?? "0",
+      latitude: latitude?.toString(),
+      longitude: longitude?.toString(),
+      updatedAt: new Date(),
+    }).where(eq(propertiesTable.id, id)).returning();
     if (!updated) return res.status(404).json({ error: "Property not found" });
     res.json({
       ...updated,
@@ -112,6 +156,8 @@ router.put("/:id", async (req, res) => {
       rentAmount: parseFloat(updated.rentAmount),
       chargesAmount: parseFloat(updated.chargesAmount || "0"),
       depositAmount: parseFloat(updated.depositAmount || "0"),
+      latitude: updated.latitude ? parseFloat(updated.latitude) : null,
+      longitude: updated.longitude ? parseFloat(updated.longitude) : null,
       createdAt: updated.createdAt.toISOString(),
     });
   } catch (err) {
