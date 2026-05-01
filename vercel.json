@@ -1,0 +1,7 @@
+{
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install",
+  "outputDirectory": "artifacts/movia-immo/dist",
+  "framework": "vite",
+  "nodeVersion": "24.x"
+}
