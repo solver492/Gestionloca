@@ -2,7 +2,7 @@
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+pnpm workspace monorepo using TypeScript. **Movia Immo** — a property management dashboard for Moroccan real estate (Tanger area). Ported from Vercel/v0 to the Replit pnpm_workspace stack.
 
 ## Stack
 
@@ -10,11 +10,24 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Node.js version**: 24
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
-- **API framework**: Express 5
+- **Frontend**: React + Vite (`artifacts/movia-immo/`) at path `/`
+- **API framework**: Express 5 (`artifacts/api-server/`) at path `/api`
 - **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+- **Validation**: Zod, `drizzle-zod`
+- **API codegen**: Orval (from `lib/api-spec/openapi.yaml`)
+- **UI**: shadcn/ui + Tailwind CSS v4, dark navy + gold theme
+- **Build**: esbuild (server bundle)
+
+## App Features
+
+- **Dashboard**: KPIs (revenue, occupancy, unpaid rents), revenue chart, occupancy by zone, alerts, activity feed
+- **Properties**: CRUD for real estate properties with zones (Malabata, Cap Spartel, Medina, etc.)
+- **Tenants**: Tenant management with payment history and status tracking
+- **Payments**: Rent payment tracking with status (payé, en_retard, en_attente)
+- **Contracts**: Lease contract management with expiry alerts
+- **Maintenance**: Ticket system with priority/status tracking
+- **Analytics**: Financial analytics, occupancy trends, profitability per property
+- **Notifications**: System notification center
 
 ## Key Commands
 
@@ -22,6 +35,15 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
+- `pnpm --filter @workspace/scripts run seed-movia` — seed database with Moroccan demo data
+
+## Key Files
+
+- `lib/api-spec/openapi.yaml` — OpenAPI spec (source of truth for all API contracts)
+- `lib/db/src/schema/` — Drizzle table definitions
+- `artifacts/api-server/src/routes/` — Express route handlers
+- `artifacts/movia-immo/src/App.tsx` — Frontend router
+- `artifacts/movia-immo/src/index.css` — Theme (dark navy #0D1B2A + gold #C9A84C)
+- `scripts/src/seed-movia.ts` — Demo seed data (10 properties, 7 tenants, 84 payments)
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
