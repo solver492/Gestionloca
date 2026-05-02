@@ -28,6 +28,11 @@ pnpm workspace monorepo using TypeScript. **Movia Immo** — a property manageme
 - **Maintenance**: Ticket system with priority/status tracking
 - **Analytics**: Financial analytics, occupancy trends, profitability per property
 - **Notifications**: System notification center
+- **Le Radar** (AI-First): Module de validation des biens reçus via OpenClaw (WhatsApp/Facebook). Biens `isVerified=false` en attente, boutons "Appeler" et "Valider & Publier". Badge amber dans la sidebar avec le nombre en attente.
+- **Catalogue public** (`/catalogue`): Vitrine publique sans AppLayout — biens vérifiés + disponibles, filtres zone/type, carousel Vimeo/photos, CTA WhatsApp.
+- **Media carousel**: Les cartes Biens (admin) supportent un carousel photo + iframe Vimeo/YouTube avec navigation flèches et dots.
+- **API externe sécurisée**: `POST /api/external/ingest` et `GET /api/external/check` avec middleware `X-API-KEY`. Table `api_keys` en DB.
+- **Seed étendu**: 5 biens Facebook (EXT-0001..0005) non vérifiés + 2 clés API (OpenClaw prod + test).
 
 ## Key Commands
 

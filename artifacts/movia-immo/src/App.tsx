@@ -13,10 +13,12 @@ import Contrats from "@/pages/Contrats";
 import Maintenance from "@/pages/Maintenance";
 import Analytique from "@/pages/Analytique";
 import Notifications from "@/pages/Notifications";
+import Radar from "@/pages/Radar";
+import Catalogue from "@/pages/Catalogue";
 
 const queryClient = new QueryClient();
 
-function Router() {
+function AdminRouter() {
   return (
     <AppLayout>
       <Switch>
@@ -28,6 +30,7 @@ function Router() {
         <Route path="/maintenance" component={Maintenance} />
         <Route path="/analytique" component={Analytique} />
         <Route path="/notifications" component={Notifications} />
+        <Route path="/radar" component={Radar} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
@@ -35,11 +38,15 @@ function Router() {
 }
 
 function App() {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
+        <WouterRouter base={base}>
+          <Switch>
+            <Route path="/catalogue" component={Catalogue} />
+            <Route component={AdminRouter} />
+          </Switch>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

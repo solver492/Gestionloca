@@ -8,6 +8,8 @@ import contractsRouter from "./contracts";
 import maintenanceRouter from "./maintenance";
 import notificationsRouter from "./notifications";
 import analyticsRouter from "./analytics";
+import externalRouter from "./external";
+import catalogueRouter from "./catalogue";
 
 const router: IRouter = Router();
 
@@ -20,5 +22,7 @@ router.use("/contracts", contractsRouter);
 router.use("/maintenance", maintenanceRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/analytics", analyticsRouter);
+router.use("/external", externalRouter);
+router.use("/catalogue", catalogueRouter);
 
 export default router;

@@ -24,6 +24,9 @@ export const propertiesTable = pgTable("properties", {
   longitude: numeric("longitude", { precision: 10, scale: 7 }),
   description: text("description"),
   currentTenantId: integer("current_tenant_id"),
+  isVerified: boolean("is_verified").notNull().default(true),
+  source: text("source").default("manuel"),
+  contactOwner: text("contact_owner"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

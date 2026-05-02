@@ -10,7 +10,9 @@ import {
   Bell, 
   Menu,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Radio,
+  ExternalLink,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,21 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useListNotifications, getListNotificationsQueryKey } from "@workspace/api-client-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useQuery } from "@tanstack/react-query";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function useRadarCount() {
+  return useQuery({
+    queryKey: ["radar-count"],
+    queryFn: async () => {
+      const r = await fetch(`${BASE}/api/properties/radar/count`);
+      if (!r.ok) return { count: 0 };
+      return r.json();
+    },
+    refetchInterval: 30_000,
+  });
+}
 
 const navigation = [
   { name: "Tableau de Bord", href: "/", icon: LayoutDashboard },
@@ -37,12 +54,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { unreadOnly: true },
     { query: { queryKey: getListNotificationsQueryKey({ unreadOnly: true }) } }
   );
+  const { data: radarData } = useRadarCount();
 
   const unreadCount = notifications?.length || 0;
+  const radarCount = radarData?.count || 0;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Mobile Sidebar */}
+      {/* Mobile overlay */}
       {isMobileOpen && (
         <div 
           className="fixed inset-0 z-50 bg-black/80 md:hidden" 
@@ -62,12 +81,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <ScrollArea className="flex-1 py-6 px-3">
-          <nav className="space-y-1">
+        <ScrollArea className="flex-1 py-4 px-3">
+          <nav className="space-y-0.5">
             {navigation.map((item) => {
               const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
               const Icon = item.icon;
-              
               return (
                 <Link key={item.name} href={item.href} className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? 'bg-sidebar-primary/10 text-sidebar-primary' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`}>
                   <Icon className={`h-5 w-5 ${isActive ? 'text-sidebar-primary' : 'text-sidebar-foreground/50'}`} />
@@ -75,6 +93,38 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
+
+            {/* Separator before Radar */}
+            <div className="my-3 border-t border-sidebar-border" />
+
+            {/* Radar */}
+            {(() => {
+              const isActive = location === "/radar";
+              return (
+                <Link href="/radar" className={`flex items-center justify-between gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? 'bg-amber-500/15 text-amber-400' : 'text-sidebar-foreground/70 hover:bg-amber-500/10 hover:text-amber-400'}`}>
+                  <span className="flex items-center gap-3">
+                    <Radio className={`h-5 w-5 ${isActive ? 'text-amber-400' : 'text-sidebar-foreground/50'} ${radarCount > 0 ? 'animate-pulse' : ''}`} />
+                    Le Radar
+                  </span>
+                  {radarCount > 0 && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[hsl(211,53%,11%)] text-xs font-bold">
+                      {radarCount > 9 ? "9+" : radarCount}
+                    </span>
+                  )}
+                </Link>
+              );
+            })()}
+
+            {/* Catalogue public */}
+            <a 
+              href="/catalogue"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+            >
+              <ExternalLink className="h-5 w-5" />
+              Vitrine Publique
+            </a>
           </nav>
         </ScrollArea>
 
@@ -113,6 +163,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex flex-1" />
             <div className="flex items-center gap-x-4 lg:gap-x-6">
+              {radarCount > 0 && (
+                <Link href="/radar" className="flex items-center gap-1.5 text-amber-400 text-xs font-medium bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-full hover:bg-amber-500/20 transition-colors">
+                  <Radio className="h-3.5 w-3.5 animate-pulse" />
+                  {radarCount} en attente
+                </Link>
+              )}
               <Link href="/notifications" className={`relative p-2.5 text-muted-foreground hover:text-foreground transition-colors ${location === '/notifications' ? 'text-primary' : ''}`}>
                 <Bell className="h-5 w-5" aria-hidden="true" />
                 {unreadCount > 0 && (

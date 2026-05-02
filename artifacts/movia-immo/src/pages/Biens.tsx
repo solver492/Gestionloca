@@ -5,7 +5,7 @@ import { formatCurrency } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, MapPin, Home, Building2, Tag, Pencil, Video, LayoutGrid, List, BedDouble, Bath } from "lucide-react";
+import { Search, Plus, MapPin, Home, Building2, Tag, Pencil, Video, LayoutGrid, List, BedDouble, Bath, ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PropertyFormDialog } from "@/components/forms/PropertyFormDialog";
@@ -13,6 +13,111 @@ import { PropertyDetailSheet } from "@/components/sheets/PropertyDetailSheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type ViewMode = "grid" | "list";
+
+function getEmbedUrl(url: string): string {
+  if (url.includes("vimeo.com")) {
+    const id = url.split("/").pop()?.split("?")[0];
+    return `https://player.vimeo.com/video/${id}?autoplay=0&title=0&byline=0&portrait=0`;
+  }
+  if (url.includes("youtu.be/")) {
+    const id = url.split("youtu.be/")[1]?.split("?")[0];
+    return `https://www.youtube.com/embed/${id}`;
+  }
+  if (url.includes("youtube.com/watch")) {
+    try { const id = new URL(url).searchParams.get("v"); return `https://www.youtube.com/embed/${id}`; } catch {}
+  }
+  return url;
+}
+
+function CardMediaCarousel({ property }: { property: any }) {
+  const [idx, setIdx] = useState(0);
+  const photos: string[] = property.photos || [];
+  const hasVideo = !!property.videoUrl;
+  const total = photos.length + (hasVideo ? 1 : 0);
+  const isVideoSlide = hasVideo && idx === photos.length;
+  const st = STATUS_CONFIG[property.status] || STATUS_CONFIG["disponible"];
+
+  const prev = (e: React.MouseEvent) => { e.stopPropagation(); setIdx((i) => (i - 1 + total) % total); };
+  const next = (e: React.MouseEvent) => { e.stopPropagation(); setIdx((i) => (i + 1) % total); };
+
+  return (
+    <div className="h-40 bg-sidebar-accent relative overflow-hidden shrink-0">
+      {isVideoSlide && property.videoUrl ? (
+        <iframe
+          src={getEmbedUrl(property.videoUrl)}
+          className="w-full h-full"
+          allowFullScreen
+          allow="autoplay; fullscreen; picture-in-picture"
+          title={property.title}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : photos.length > 0 ? (
+        <img
+          src={photos[idx] || photos[0]}
+          alt={property.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          onError={(e) => { (e.target as HTMLImageElement).style.opacity = "0.2"; }}
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-sidebar-accent to-background/30">
+          <Building2 className="h-12 w-12 text-muted-foreground/20" />
+        </div>
+      )}
+
+      {/* Carousel arrows */}
+      {total > 1 && (
+        <>
+          <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100 z-10">
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100 z-10">
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+            {Array(total).fill(0).map((_, i) => (
+              <button key={i} onClick={(e) => { e.stopPropagation(); setIdx(i); }}
+                className={`rounded-full transition-all ${i === idx ? "w-3.5 h-1.5 bg-primary" : "w-1.5 h-1.5 bg-white/40"}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Video pill */}
+      {hasVideo && !isVideoSlide && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setIdx(photos.length); }}
+          className="absolute top-2.5 left-2.5 z-10 bg-black/60 backdrop-blur text-white border-none text-xs flex items-center gap-1 px-2 py-0.5 rounded-full hover:bg-primary/80 transition-colors"
+        >
+          <Video className="h-2.5 w-2.5" /> Vidéo
+        </button>
+      )}
+      {isVideoSlide && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setIdx(0); }}
+          className="absolute top-2.5 left-2.5 z-10 bg-primary text-primary-foreground text-xs flex items-center gap-1 px-2 py-0.5 rounded-full"
+        >
+          <Video className="h-2.5 w-2.5" /> Vidéo
+        </button>
+      )}
+
+      {/* Status badge */}
+      <div className="absolute top-2.5 right-2.5 z-10">
+        <Badge className={`border text-xs font-medium flex items-center gap-1 ${st.color}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
+          {st.label}
+        </Badge>
+      </div>
+
+      {/* Price */}
+      <div className="absolute bottom-2.5 left-2.5 z-10">
+        <div className="bg-primary text-primary-foreground font-mono font-bold text-xs px-2.5 py-1 rounded-md shadow-lg">
+          {formatCurrency(property.rentAmount)}<span className="font-normal opacity-75">/mois</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string }> = {
   disponible:  { label: "Disponible",  color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",  dot: "bg-emerald-400" },
@@ -175,40 +280,9 @@ export default function Biens() {
                   onClick={() => openDetail(property)}
                   className="overflow-hidden hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 transition-all bg-card/50 backdrop-blur border-card-border group cursor-pointer flex flex-col"
                 >
-                  {/* Photo */}
-                  <div className="h-40 bg-sidebar-accent relative overflow-hidden shrink-0">
-                    {property.photos && property.photos.length > 0 ? (
-                      <img
-                        src={property.photos[0]}
-                        alt={property.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-sidebar-accent to-background/30">
-                        <Building2 className="h-12 w-12 text-muted-foreground/20" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="absolute top-2.5 right-2.5">
-                      <Badge className={`border text-xs font-medium flex items-center gap-1 ${st.color}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
-                        {st.label}
-                      </Badge>
-                    </div>
-                    <div className="absolute bottom-2.5 left-2.5">
-                      <div className="bg-primary text-primary-foreground font-mono font-bold text-xs px-2.5 py-1 rounded-md shadow-lg">
-                        {formatCurrency(property.rentAmount)}<span className="font-normal opacity-75">/mois</span>
-                      </div>
-                    </div>
-                    {property.videoUrl && (
-                      <div className="absolute top-2.5 left-2.5">
-                        <Badge className="bg-black/60 backdrop-blur text-white border-none text-xs flex items-center gap-1 py-0.5">
-                          <Video className="h-2.5 w-2.5" /> Vidéo
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
+                  {/* Photo + Video carousel */}
+                  <CardMediaCarousel property={property} />
+                  
 
                   <CardContent className="p-4 flex-1 flex flex-col">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">

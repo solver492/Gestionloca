@@ -93,6 +93,58 @@ router.post("/", async (req, res) => {
   }
 });
 
+// GET /properties/radar — unverified properties for admin review
+router.get("/radar", async (req, res) => {
+  try {
+    const properties = await db
+      .select()
+      .from(propertiesTable)
+      .where(eq(propertiesTable.isVerified, false))
+      .orderBy(sql`${propertiesTable.createdAt} DESC`);
+    res.json(properties.map((p) => ({
+      ...p,
+      surface: parseFloat(p.surface),
+      rentAmount: parseFloat(p.rentAmount),
+      chargesAmount: parseFloat(p.chargesAmount || "0"),
+      depositAmount: parseFloat(p.depositAmount || "0"),
+      createdAt: p.createdAt.toISOString(),
+    })));
+  } catch (err) {
+    req.log.error({ err }, "Error fetching radar");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /properties/radar/count
+router.get("/radar/count", async (req, res) => {
+  try {
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(propertiesTable)
+      .where(eq(propertiesTable.isVerified, false));
+    res.json({ count });
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PATCH /properties/:id/verify — validate & publish
+router.patch("/:id/verify", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [updated] = await db
+      .update(propertiesTable)
+      .set({ isVerified: true, updatedAt: new Date() })
+      .where(eq(propertiesTable.id, id))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Property not found" });
+    res.json({ success: true, id: updated.id, isVerified: updated.isVerified });
+  } catch (err) {
+    req.log.error({ err }, "Error verifying property");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.get("/stats/by-zone", async (req, res) => {
   try {
     const properties = await db.select().from(propertiesTable);

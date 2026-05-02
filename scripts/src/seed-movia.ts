@@ -1,4 +1,4 @@
-import { db, propertiesTable, tenantsTable, paymentsTable, contractsTable, maintenanceTable, notificationsTable, activitiesTable } from "@workspace/db";
+import { db, propertiesTable, tenantsTable, paymentsTable, contractsTable, maintenanceTable, notificationsTable, activitiesTable, apiKeysTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
 async function seed() {
@@ -767,7 +767,112 @@ async function seed() {
     },
   ]);
 
-  console.log("Seed complete!");
+  // ── 5 biens non vérifiés depuis Facebook (Le Radar) ──────────────────────────
+  await db.insert(propertiesTable).values([
+    {
+      reference: "EXT-0001",
+      title: "Appartement F3 Résidence Yasmine",
+      type: "appartement",
+      zone: "Malabata",
+      address: "Résidence Yasmine, Bd Malabata, Tanger",
+      surface: "85",
+      rooms: 3,
+      bathrooms: 2,
+      rentAmount: "7000",
+      status: "disponible",
+      source: "facebook",
+      isVerified: false,
+      contactOwner: "+212 661-123456",
+      description: "Appartement lumineux avec balcon, vue mer partielle. Disponible immédiatement.",
+      photos: [],
+    },
+    {
+      reference: "EXT-0002",
+      title: "Studio meublé Centre Tanger",
+      type: "studio",
+      zone: "Centre_Ville",
+      address: "Rue Ibn Rochd, Centre Ville, Tanger",
+      surface: "40",
+      rooms: 1,
+      bathrooms: 1,
+      rentAmount: "3500",
+      status: "disponible",
+      source: "facebook",
+      isVerified: false,
+      contactOwner: "+212 662-234567",
+      description: "Studio entièrement meublé et équipé, idéal pour jeune actif ou étudiant.",
+      photos: [],
+    },
+    {
+      reference: "EXT-0003",
+      title: "Villa avec piscine Asilah",
+      type: "villa",
+      zone: "Asilah",
+      address: "Route de Moulay Bousselham, Asilah",
+      surface: "320",
+      rooms: 5,
+      bathrooms: 3,
+      rentAmount: "22000",
+      status: "disponible",
+      source: "facebook",
+      isVerified: false,
+      contactOwner: "+212 663-345678",
+      description: "Magnifique villa avec piscine et jardin. Parfaite pour familles ou location saisonnière.",
+      photos: [],
+    },
+    {
+      reference: "EXT-0004",
+      title: "Local commercial Iberia 95m²",
+      type: "local_commercial",
+      zone: "Iberia",
+      address: "Avenue Mohammed VI, Zone Iberia, Tanger",
+      surface: "95",
+      rentAmount: "9500",
+      status: "disponible",
+      source: "facebook",
+      isVerified: false,
+      contactOwner: "+212 664-456789",
+      description: "Local commercial en rez-de-chaussée, grande vitrine, idéal commerce ou bureau.",
+      photos: [],
+    },
+    {
+      reference: "EXT-0005",
+      title: "Duplex Cap Spartel Vue Mer",
+      type: "duplex",
+      zone: "Cap_Spartel",
+      address: "Résidence Les Falaises, Cap Spartel, Tanger",
+      surface: "140",
+      rooms: 4,
+      bathrooms: 2,
+      rentAmount: "12000",
+      chargesAmount: "800",
+      status: "disponible",
+      source: "facebook",
+      isVerified: false,
+      contactOwner: "+212 665-567890",
+      description: "Superbe duplex avec terrasse panoramique. Vue imprenable sur le détroit de Gibraltar.",
+      photos: [],
+    },
+  ]);
+
+  // ── Clé API de test pour OpenClaw ─────────────────────────────────────────
+  await db.delete(apiKeysTable).execute();
+  await db.insert(apiKeysTable).values([
+    {
+      name: "OpenClaw Production",
+      key: "mk_live_movia_openclaw_2024_xK9pQr7mNvBtYzLs",
+      isActive: true,
+      source: "openclaw",
+    },
+    {
+      name: "Test Key",
+      key: "mk_test_movia_dev_2024_aB3cD5eF7gH9iJ1k",
+      isActive: true,
+      source: "test",
+    },
+  ]);
+
+  console.log("Seed complete! (+ 5 biens Radar Facebook + 2 clés API)");
 }
 
 seed().catch(console.error).finally(() => process.exit());
