@@ -1,34 +1,35 @@
-import { pgTable, serial, text, numeric, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { sqliteTable, integer, text, real } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const propertiesTable = pgTable("properties", {
-  id: serial("id").primaryKey(),
+export const propertiesTable = sqliteTable("properties", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   reference: text("reference").notNull().unique(),
   title: text("title").notNull(),
   type: text("type").notNull(),
   zone: text("zone").notNull(),
   address: text("address").notNull(),
   floor: integer("floor"),
-  surface: numeric("surface", { precision: 10, scale: 2 }).notNull(),
+  surface: real("surface").notNull(),
   rooms: integer("rooms"),
   bathrooms: integer("bathrooms"),
-  rentAmount: numeric("rent_amount", { precision: 10, scale: 2 }).notNull(),
-  chargesAmount: numeric("charges_amount", { precision: 10, scale: 2 }).default("0"),
-  depositAmount: numeric("deposit_amount", { precision: 10, scale: 2 }).default("0"),
+  rentAmount: real("rent_amount").notNull(),
+  chargesAmount: real("charges_amount").default(0),
+  depositAmount: real("deposit_amount").default(0),
   status: text("status").notNull().default("disponible"),
-  amenities: text("amenities").array().default([]),
-  photos: text("photos").array().default([]),
+  amenities: text("amenities", { mode: "json" }).$type<string[]>().notNull().default(sql`'[]'`),
+  photos: text("photos", { mode: "json" }).$type<string[]>().notNull().default(sql`'[]'`),
   videoUrl: text("video_url"),
-  latitude: numeric("latitude", { precision: 10, scale: 7 }),
-  longitude: numeric("longitude", { precision: 10, scale: 7 }),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
   description: text("description"),
   currentTenantId: integer("current_tenant_id"),
-  isVerified: boolean("is_verified").notNull().default(true),
+  isVerified: integer("is_verified", { mode: "boolean" }).notNull().default(true),
   source: text("source").default("manuel"),
   contactOwner: text("contact_owner"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(sql`(unixepoch() * 1000)`),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 export const insertPropertySchema = createInsertSchema(propertiesTable).omit({ id: true, createdAt: true, updatedAt: true });

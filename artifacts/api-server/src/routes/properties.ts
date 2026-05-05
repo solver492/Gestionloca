@@ -119,10 +119,10 @@ router.get("/radar", async (req, res) => {
 router.get("/radar/count", async (req, res) => {
   try {
     const [{ count }] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(propertiesTable)
       .where(eq(propertiesTable.isVerified, false));
-    res.json({ count });
+    res.json({ count: Number(count) || 0 });
   } catch (err) {
     res.status(500).json({ error: "Internal server error" });
   }

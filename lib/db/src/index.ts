@@ -1,16 +1,28 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
 
-const { Pool } = pg;
-
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+function resolveWorkspaceRoot(startDir: string): string {
+  let dir = path.resolve(startDir);
+  for (let i = 0; i < 8; i++) {
+    if (existsSync(path.join(dir, "lib", "db"))) {
+      return dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return path.resolve(startDir);
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle(pool, { schema });
+const workspaceRoot = resolveWorkspaceRoot(process.cwd());
+const defaultDbPath = path.join(workspaceRoot, "lib", "db", "sqlite.db");
+const databaseUrl = process.env.DATABASE_URL || pathToFileURL(defaultDbPath).toString();
+
+export const client = createClient({ url: databaseUrl });
+export const db = drizzle(client, { schema });
 
 export * from "./schema";

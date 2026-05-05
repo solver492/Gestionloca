@@ -35,10 +35,14 @@ export default function Dashboard() {
   const { data: alerts, isLoading: isLoadingAlerts } = useGetDashboardAlerts({
     query: { queryKey: getGetDashboardAlertsQueryKey() }
   });
+  const alertsList = Array.isArray(alerts) ? alerts : [];
 
   const { data: activity, isLoading: isLoadingActivity } = useGetDashboardActivity({
     query: { queryKey: getGetDashboardActivityQueryKey() }
   });
+  const revenueChartData = Array.isArray(revenueChart) ? revenueChart : [];
+  const occupancyChartData = Array.isArray(occupancyChart) ? occupancyChart : [];
+  const activityList = Array.isArray(activity) ? activity : [];
 
   return (
     <div className="space-y-6">
@@ -127,9 +131,9 @@ export default function Dashboard() {
           <CardContent className="h-[300px]">
             {isLoadingRevenue ? (
               <Skeleton className="w-full h-full rounded-xl" />
-            ) : revenueChart && revenueChart.length > 0 ? (
+            ) : revenueChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueChart} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <AreaChart data={revenueChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorCollected" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
@@ -166,9 +170,9 @@ export default function Dashboard() {
           <CardContent className="h-[300px]">
             {isLoadingOccupancy ? (
               <Skeleton className="w-full h-full rounded-xl" />
-            ) : occupancyChart && occupancyChart.length > 0 ? (
+            ) : occupancyChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={occupancyChart} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                <BarChart data={occupancyChartData} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" />
                   <XAxis type="number" hide />
                   <YAxis dataKey="zone" type="category" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} width={100} />
@@ -192,8 +196,8 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="font-serif flex items-center gap-2">
               Alertes & Actions Requises
-              {alerts && alerts.length > 0 && (
-                <Badge variant="destructive" className="ml-2 rounded-full px-2 font-mono">{alerts.length}</Badge>
+              {alertsList.length > 0 && (
+                <Badge variant="destructive" className="ml-2 rounded-full px-2 font-mono">{alertsList.length}</Badge>
               )}
             </CardTitle>
           </CardHeader>
@@ -203,9 +207,9 @@ export default function Dashboard() {
                 <div className="space-y-3">
                   {Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-md" />)}
                 </div>
-              ) : alerts && alerts.length > 0 ? (
+              ) : alertsList.length > 0 ? (
                 <div className="space-y-3">
-                  {alerts.map((alert) => (
+                  {alertsList.map((alert) => (
                     <div key={alert.id} className={`flex flex-col gap-1 p-3 rounded-md border-l-4 bg-sidebar-accent/30 ${alert.severity === 'critical' ? 'border-l-destructive' : alert.severity === 'high' ? 'border-l-orange-500' : alert.severity === 'medium' ? 'border-l-primary' : 'border-l-blue-500'}`}>
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-sm text-foreground">{alert.title}</span>
@@ -246,9 +250,9 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
-              ) : activity && activity.length > 0 ? (
+              ) : activityList.length > 0 ? (
                 <div className="space-y-4">
-                  {activity.map((act) => (
+                  {activityList.map((act) => (
                     <div key={act.id} className="flex items-start gap-3">
                       <div className="mt-0.5 rounded-full p-1.5 bg-sidebar-accent text-primary">
                         {act.type === 'payment' && <Banknote className="h-4 w-4" />}

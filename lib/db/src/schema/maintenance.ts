@@ -1,9 +1,10 @@
-import { pgTable, serial, text, numeric, integer, timestamp } from "drizzle-orm/pg-core";
+import { sqliteTable, integer, text, real } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const maintenanceTable = pgTable("maintenance_tickets", {
-  id: serial("id").primaryKey(),
+export const maintenanceTable = sqliteTable("maintenance_tickets", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   reference: text("reference").notNull().unique(),
   title: text("title").notNull(),
   description: text("description").notNull(),
@@ -14,13 +15,13 @@ export const maintenanceTable = pgTable("maintenance_tickets", {
   status: text("status").notNull().default("ouvert"),
   technicianName: text("technician_name"),
   technicianPhone: text("technician_phone"),
-  estimatedCost: numeric("estimated_cost", { precision: 10, scale: 2 }),
-  actualCost: numeric("actual_cost", { precision: 10, scale: 2 }),
+  estimatedCost: real("estimated_cost"),
+  actualCost: real("actual_cost"),
   scheduledDate: text("scheduled_date"),
   completedDate: text("completed_date"),
   notes: text("notes"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(sql`(unixepoch() * 1000)`),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(sql`(unixepoch() * 1000)`),
 });
 
 export const insertMaintenanceSchema = createInsertSchema(maintenanceTable).omit({ id: true, createdAt: true, updatedAt: true });

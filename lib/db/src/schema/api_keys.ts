@@ -1,13 +1,14 @@
-import { pgTable, serial, text, boolean, timestamp } from "drizzle-orm/pg-core";
+import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 
-export const apiKeysTable = pgTable("api_keys", {
-  id: serial("id").primaryKey(),
+export const apiKeysTable = sqliteTable("api_keys", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   key: text("key").notNull().unique(),
-  isActive: boolean("is_active").notNull().default(true),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   source: text("source"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  lastUsedAt: timestamp("last_used_at"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(sql`(unixepoch() * 1000)`),
+  lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),
 });
 
 export type ApiKey = typeof apiKeysTable.$inferSelect;
