@@ -73,5 +73,9 @@
     "vite": "catalog:",
     "wouter": "^3.3.5",
     "zod": "catalog:"
+  },
+  "dependencies": {
+    "@types/react-signature-canvas": "^1.0.7",
+    "react-signature-canvas": "1.1.0-alpha.2"
   }
 }

@@ -4,8 +4,7 @@ import "./index.css";
 import { setBaseUrl } from "@workspace/api-client-react";
 
 const apiBaseUrl =
-  import.meta.env.VITE_API_BASE_URL ??
-  (import.meta.env.DEV ? "http://localhost:8090" : null);
+  import.meta.env.VITE_API_BASE_URL ?? null;
 
 setBaseUrl(apiBaseUrl);
 

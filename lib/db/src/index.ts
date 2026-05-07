@@ -20,7 +20,24 @@ function resolveWorkspaceRoot(startDir: string): string {
 
 const workspaceRoot = resolveWorkspaceRoot(process.cwd());
 const defaultDbPath = path.join(workspaceRoot, "lib", "db", "sqlite.db");
-const databaseUrl = process.env.DATABASE_URL || pathToFileURL(defaultDbPath).toString();
+
+function resolveLibsqlUrl(rawUrl: string, fallback: string): string {
+  try {
+    const u = new URL(rawUrl);
+    if (u.protocol === "postgresql:" || u.protocol === "postgres:") {
+      return fallback;
+    }
+    u.searchParams.delete("sslmode");
+    u.searchParams.delete("ssl");
+    return u.toString();
+  } catch {
+    return fallback;
+  }
+}
+
+const rawUrl = process.env.DATABASE_URL || "";
+const fallbackUrl = pathToFileURL(defaultDbPath).toString();
+const databaseUrl = rawUrl ? resolveLibsqlUrl(rawUrl, fallbackUrl) : fallbackUrl;
 
 export const client = createClient({ url: databaseUrl });
 export const db = drizzle(client, { schema });
