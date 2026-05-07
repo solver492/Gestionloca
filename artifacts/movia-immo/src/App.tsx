@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AppProvider } from "@/context/AppContext";
+import { useAppContext } from "@/context/AppContext";
 import NotFound from "@/pages/not-found";
 
 import Dashboard from "@/pages/Dashboard";
@@ -11,13 +12,20 @@ import Biens from "@/pages/Biens";
 import Locataires from "@/pages/Locataires";
 import Paiements from "@/pages/Paiements";
 import Contrats from "@/pages/Contrats";
+import ContratVente from "@/pages/ContratVente";
 import Maintenance from "@/pages/Maintenance";
 import Analytique from "@/pages/Analytique";
+import AnalytiqueVente from "@/pages/AnalytiqueVente";
 import Notifications from "@/pages/Notifications";
 import Radar from "@/pages/Radar";
 import Catalogue from "@/pages/Catalogue";
 
 const queryClient = new QueryClient();
+
+function AnalytiqueRouter() {
+  const { mode } = useAppContext();
+  return mode === "VENTE" ? <AnalytiqueVente /> : <Analytique />;
+}
 
 function AdminRouter() {
   return (
@@ -28,8 +36,9 @@ function AdminRouter() {
         <Route path="/locataires" component={Locataires} />
         <Route path="/paiements" component={Paiements} />
         <Route path="/contrats" component={Contrats} />
+        <Route path="/contrats-vente" component={ContratVente} />
         <Route path="/maintenance" component={Maintenance} />
-        <Route path="/analytique" component={Analytique} />
+        <Route path="/analytique" component={AnalytiqueRouter} />
         <Route path="/notifications" component={Notifications} />
         <Route path="/radar" component={Radar} />
         <Route component={NotFound} />

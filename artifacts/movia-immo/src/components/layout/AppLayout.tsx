@@ -44,7 +44,7 @@ function useRadarCount() {
 const NAV_VENTE = [
   { name: "Tableau de Bord", href: "/", icon: LayoutDashboard },
   { name: "Portefeuille Vente", href: "/biens", icon: Building },
-  { name: "Contrats Vente", href: "/contrats", icon: FileText },
+  { name: "Contrats de Vente", href: "/contrats-vente", icon: FileText },
   { name: "Analytique & Ads", href: "/analytique", icon: BarChart3 },
 ];
 

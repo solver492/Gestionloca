@@ -7,9 +7,10 @@ import {
   MapPin, Home, Building2, Tag, Pencil, Video, BedDouble,
   Bath, Layers, Banknote, Shield, CheckCircle2,
   ChevronLeft, ChevronRight, X, Globe, Share2, Zap, Loader2,
-  Facebook, Instagram, Youtube, Linkedin, Check,
+  Facebook, Instagram, Youtube, Linkedin, Check, UserCircle,
 } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -70,7 +71,28 @@ function GlassModal({ open, onClose, children, title }: { open: boolean; onClose
   );
 }
 
+function getEmbedUrl(url: string): string | null {
+  if (!url) return null;
+  if (url.includes("youtu.be/")) {
+    const id = url.split("youtu.be/")[1]?.split("?")[0];
+    return id ? `https://www.youtube.com/embed/${id}` : null;
+  }
+  if (url.includes("youtube.com/shorts/")) {
+    const id = url.split("shorts/")[1]?.split("?")[0];
+    return id ? `https://www.youtube.com/embed/${id}` : null;
+  }
+  if (url.includes("youtube.com/watch")) {
+    try { const id = new URL(url).searchParams.get("v"); return id ? `https://www.youtube.com/embed/${id}` : null; } catch { return null; }
+  }
+  if (url.includes("vimeo.com")) {
+    const id = url.split("/").pop()?.split("?")[0];
+    return id ? `https://player.vimeo.com/video/${id}?title=0&byline=0&portrait=0` : null;
+  }
+  return url;
+}
+
 export function PropertyDetailSheet({ open, onOpenChange, property, onEdit }: PropertyDetailSheetProps) {
+  const [, navigate] = useLocation();
   const [photoIndex, setPhotoIndex] = useState(0);
   const [publishLoading, setPublishLoading] = useState(false);
   const [diffuseOpen, setDiffuseOpen] = useState(false);
@@ -423,37 +445,59 @@ export function PropertyDetailSheet({ open, onOpenChange, property, onEdit }: Pr
               </div>
             )}
 
-            {/* Vidéo */}
-            {property.videoUrl && (
-              <div
-                className="rounded-xl p-4 flex items-center gap-3"
-                style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)' }}
-              >
-                <Video className="h-5 w-5 text-primary shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">Vidéo disponible</p>
-                  <a href={property.videoUrl} target="_blank" rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline truncate block">
-                    Voir la vidéo →
-                  </a>
-                </div>
-              </div>
-            )}
-
-            {/* Locataire */}
-            {property.currentTenantId && property.status === "occupe" && (
-              <div
-                className="rounded-xl p-4 flex items-center gap-3"
-                style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)' }}
-              >
-                <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ background: 'hsl(var(--primary)/0.2)', color: 'hsl(var(--primary))' }}>
-                  <Shield className="h-5 w-5" />
-                </div>
+            {/* Vidéo — embedded iframe player */}
+            {property.videoUrl && (() => {
+              const embedUrl = getEmbedUrl(property.videoUrl);
+              return embedUrl ? (
                 <div>
-                  <p className="text-xs text-muted-foreground">Locataire actuel</p>
-                  <p className="text-sm font-medium text-foreground">Bien occupé</p>
+                  <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                    <Video className="h-4 w-4 text-primary" /> Vidéo du bien
+                  </h3>
+                  <div className="rounded-xl overflow-hidden border" style={{ border: '1px solid var(--glass-border)', aspectRatio: '16/9', background: '#000' }}>
+                    <iframe
+                      src={embedUrl}
+                      className="w-full h-full"
+                      allowFullScreen
+                      allow="autoplay; fullscreen; picture-in-picture"
+                      title={property.title}
+                      loading="lazy"
+                    />
+                  </div>
                 </div>
-                <Badge className="ml-auto bg-blue-500/10 text-blue-400 border-blue-500/20 border">Actif</Badge>
+              ) : (
+                <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)' }}>
+                  <Video className="h-5 w-5 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">Vidéo disponible</p>
+                    <a href={property.videoUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate block">Voir la vidéo →</a>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Locataire — avec bouton de navigation */}
+            {property.currentTenantId && (
+              <div
+                className="rounded-xl p-4 flex items-center gap-3"
+                style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)' }}
+              >
+                <div className="h-10 w-10 rounded-full flex items-center justify-center shrink-0" style={{ background: 'hsl(var(--primary)/0.15)', color: 'hsl(var(--primary))' }}>
+                  <UserCircle className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">Locataire actuel</p>
+                  <p className="text-sm font-medium text-foreground">Bien occupé · ID {property.currentTenantId}</p>
+                </div>
+                <button
+                  onClick={() => { onOpenChange(false); setTimeout(() => navigate("/locataires"), 150); }}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1"
+                  style={{ background: 'hsl(var(--primary)/0.15)', color: 'hsl(var(--primary))', border: '1px solid hsl(var(--primary)/0.3)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'hsl(var(--primary)/0.25)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'hsl(var(--primary)/0.15)'; }}
+                >
+                  <Shield className="h-3 w-3" />
+                  Voir fiche
+                </button>
               </div>
             )}
           </div>
