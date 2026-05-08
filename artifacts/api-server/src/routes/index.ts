@@ -12,6 +12,7 @@ import externalRouter from "./external";
 import catalogueRouter from "./catalogue";
 import salesContractsRouter from "./salesContracts";
 import venteAnalyticsRouter from "./venteAnalytics";
+import calendarEventsRouter from "./calendarEvents";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use("/external", externalRouter);
 router.use("/catalogue", catalogueRouter);
 router.use("/sales-contracts", salesContractsRouter);
 router.use("/vente-analytics", venteAnalyticsRouter);
+router.use("/calendar-events", calendarEventsRouter);
 
 export default router;
