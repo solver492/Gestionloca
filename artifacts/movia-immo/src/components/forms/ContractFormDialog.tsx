@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useCreateContract,
@@ -27,8 +27,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2 } from "lucide-react";
+import { Loader2, PenLine, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import SignatureCanvas from "react-signature-canvas";
 
 interface ContractFormDialogProps {
   open: boolean;
@@ -56,6 +57,8 @@ export function ContractFormDialog({ open, onOpenChange, contract }: ContractFor
   const qc = useQueryClient();
   const isEdit = !!contract;
   const [form, setForm] = useState(defaultValues);
+  const [signatureData, setSignatureData] = useState<string | null>(null);
+  const sigCanvasRef = useRef<SignatureCanvas>(null);
 
   const { data: tenants } = useListTenants();
   const { data: properties } = useListProperties();
@@ -83,6 +86,8 @@ export function ContractFormDialog({ open, onOpenChange, contract }: ContractFor
       const endDate = new Date(now.setFullYear(now.getFullYear() + 1)).toISOString().substring(0, 10);
       setForm({ ...defaultValues, startDate, endDate });
     }
+    setSignatureData(null);
+    setTimeout(() => sigCanvasRef.current?.clear(), 100);
   }, [contract, open]);
 
   const invalidate = () => {
@@ -116,6 +121,17 @@ export function ContractFormDialog({ open, onOpenChange, contract }: ContractFor
 
   const handleChange = (field: string, value: any) => {
     setForm((f) => ({ ...f, [field]: value }));
+  };
+
+  const handleSignatureEnd = () => {
+    if (sigCanvasRef.current && !sigCanvasRef.current.isEmpty()) {
+      setSignatureData(sigCanvasRef.current.toDataURL("image/png"));
+    }
+  };
+
+  const clearSignature = () => {
+    sigCanvasRef.current?.clear();
+    setSignatureData(null);
   };
 
   const handleSubmit = () => {
@@ -281,6 +297,48 @@ export function ContractFormDialog({ open, onOpenChange, contract }: ContractFor
                 className="bg-background/50 border-input resize-none"
                 rows={3}
               />
+            </div>
+
+            <div className="col-span-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <PenLine className="h-4 w-4 text-primary" />
+                  Signature électronique du locataire
+                </Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSignature}
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  Effacer
+                </Button>
+              </div>
+              <div className="relative rounded-xl border border-card-border bg-background/30 overflow-hidden">
+                <SignatureCanvas
+                  ref={sigCanvasRef}
+                  penColor="hsl(var(--primary))"
+                  canvasProps={{
+                    width: 500,
+                    height: 140,
+                    className: "w-full h-[140px] cursor-crosshair",
+                  }}
+                  onEnd={handleSignatureEnd}
+                />
+                {!signatureData && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <p className="text-muted-foreground/40 text-sm select-none">Signez ici...</p>
+                  </div>
+                )}
+              </div>
+              {signatureData && (
+                <p className="text-xs text-emerald-500 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                  Signature capturée
+                </p>
+              )}
             </div>
           </div>
         </div>

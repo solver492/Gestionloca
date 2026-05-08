@@ -128,7 +128,7 @@ router.get("/radar/count", async (req, res) => {
   }
 });
 
-// PATCH /properties/:id/verify — validate & publish
+// PATCH /properties/:id/verify — validate & publish to portfolio
 router.patch("/:id/verify", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -141,6 +141,174 @@ router.patch("/:id/verify", async (req, res) => {
     res.json({ success: true, id: updated.id, isVerified: updated.isVerified });
   } catch (err) {
     req.log.error({ err }, "Error verifying property");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PATCH /properties/:id/quick-edit — quick edit title/price in Radar
+router.patch("/:id/quick-edit", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { title, rentAmount } = req.body as { title?: string; rentAmount?: number };
+    const updateData: Record<string, any> = { updatedAt: new Date() };
+    if (title) updateData.title = title;
+    if (rentAmount !== undefined) updateData.rentAmount = rentAmount.toString();
+    const [updated] = await db
+      .update(propertiesTable)
+      .set(updateData)
+      .where(eq(propertiesTable.id, id))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Property not found" });
+    res.json({ success: true, id: updated.id });
+  } catch (err) {
+    req.log.error({ err }, "Error quick-editing property");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PATCH /properties/:id/publish — Action 1: Publier Vitrine (status → PUBLIC)
+router.patch("/:id/publish", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [updated] = await db
+      .update(propertiesTable)
+      .set({ status: "public", isVerified: true, updatedAt: new Date() })
+      .where(eq(propertiesTable.id, id))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Property not found" });
+    res.json({
+      success: true,
+      id: updated.id,
+      status: updated.status,
+      message: "Bien publié sur la Vitrine publique",
+    });
+  } catch (err) {
+    req.log.error({ err }, "Error publishing property");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /properties/:id/diffuse — Action 2: Diffusion Réseaux (Webhook → Zapier)
+router.post("/:id/diffuse", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { channels } = req.body as { channels: string[] };
+
+    const [property] = await db.select().from(propertiesTable).where(eq(propertiesTable.id, id));
+    if (!property) return res.status(404).json({ error: "Property not found" });
+
+    const webhookPayload = {
+      event: "property.diffuse",
+      timestamp: new Date().toISOString(),
+      channels: channels || [],
+      property: {
+        id: property.id,
+        reference: property.reference,
+        title: property.title,
+        type: property.type,
+        zone: property.zone,
+        address: property.address,
+        surface: parseFloat(property.surface),
+        rentAmount: parseFloat(property.rentAmount),
+        rooms: property.rooms,
+        bathrooms: property.bathrooms,
+        description: property.description,
+        photos: property.photos,
+        videoUrl: property.videoUrl,
+        status: property.status,
+      },
+      meta: {
+        source: "movia-immo-crm",
+        action: "social-diffusion",
+      },
+    };
+
+    const zapierUrl = process.env.ZAPIER_WEBHOOK_DIFFUSE_URL;
+    let zapierConfirmed = false;
+
+    if (zapierUrl) {
+      try {
+        const zapRes = await fetch(zapierUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(webhookPayload),
+        });
+        zapierConfirmed = zapRes.ok;
+      } catch (_e) {
+        req.log.warn("Zapier webhook failed, continuing");
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Webhook envoyé pour diffusion sur ${channels?.join(", ") || "tous les réseaux"}`,
+      channels,
+      zapierConfirmed,
+      payload: webhookPayload,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Error diffusing property");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /properties/:id/sponsor — Action 3: Sponsoring Premium (TikTok/Google/Meta)
+router.post("/:id/sponsor", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { platform, budget } = req.body as { platform: "tiktok" | "google" | "meta"; budget: number };
+
+    const [property] = await db.select().from(propertiesTable).where(eq(propertiesTable.id, id));
+    if (!property) return res.status(404).json({ error: "Property not found" });
+
+    const webhookPayload = {
+      event: "property.sponsor",
+      timestamp: new Date().toISOString(),
+      platform,
+      budget_mad_per_day: budget,
+      property: {
+        id: property.id,
+        reference: property.reference,
+        title: property.title,
+        type: property.type,
+        zone: property.zone,
+        rentAmount: parseFloat(property.rentAmount),
+        photos: property.photos,
+        videoUrl: property.videoUrl,
+        description: property.description,
+      },
+      meta: {
+        source: "movia-immo-crm",
+        action: "paid-advertising",
+      },
+    };
+
+    const zapierUrl = process.env.ZAPIER_WEBHOOK_SPONSOR_URL || process.env.ZAPIER_WEBHOOK_DIFFUSE_URL;
+    let zapierConfirmed = false;
+
+    if (zapierUrl) {
+      try {
+        const zapRes = await fetch(zapierUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(webhookPayload),
+        });
+        zapierConfirmed = zapRes.ok;
+      } catch (_e) {
+        req.log.warn("Zapier sponsor webhook failed");
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Campagne ${platform.toUpperCase()} lancée — ${budget} MAD/jour`,
+      platform,
+      budget,
+      zapierConfirmed,
+      payload: webhookPayload,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Error sponsoring property");
     res.status(500).json({ error: "Internal server error" });
   }
 });

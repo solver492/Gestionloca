@@ -4,7 +4,125 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, AlertCircle, FileSignature, CheckCircle2, Pencil } from "lucide-react";
+import { Plus, AlertCircle, FileSignature, CheckCircle2, Pencil, Printer } from "lucide-react";
+
+function printBailContract(contract: any) {
+  const w = window.open("", "_blank");
+  if (!w) { alert("Popup bloquée — veuillez autoriser les popups pour ce site."); return; }
+
+  const startDate = contract.startDate ? new Date(contract.startDate).toLocaleDateString("fr-FR") : "—";
+  const endDate = contract.endDate ? new Date(contract.endDate).toLocaleDateString("fr-FR") : "—";
+  const typeLabel: Record<string, string> = {
+    bail_habitation: "Bail d'Habitation",
+    bail_commercial: "Bail Commercial",
+    bail_meuble: "Bail Meublé",
+    contrat_location: "Contrat de Location",
+    renouvellement: "Renouvellement de Bail",
+  };
+
+  w.document.write(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Bail ${contract.reference}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Georgia', serif; color: #1a1a2e; padding: 40px; line-height: 1.7; }
+    .header { text-align: center; border-bottom: 3px double #1a1a2e; padding-bottom: 20px; margin-bottom: 28px; }
+    .agency-name { font-size: 26px; font-weight: bold; letter-spacing: 2px; color: #c17d2a; }
+    .agency-sub { font-size: 12px; color: #666; margin-top: 4px; }
+    .contract-title { font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; margin-top: 14px; }
+    .ref { font-size: 12px; color: #888; margin-top: 4px; font-family: monospace; }
+    .section { margin-bottom: 24px; }
+    .section-title { font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #ccc; padding-bottom: 6px; margin-bottom: 12px; color: #444; }
+    .row { display: flex; gap: 24px; margin-bottom: 8px; }
+    .field { flex: 1; }
+    .field-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .field-value { font-size: 14px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; min-height: 22px; }
+    .amount { font-size: 18px; color: #c17d2a; font-weight: bold; font-family: monospace; }
+    .conditions-box { border: 1px solid #ccc; padding: 12px; min-height: 80px; font-size: 13px; border-radius: 4px; }
+    .sigs { display: flex; gap: 40px; margin-top: 48px; }
+    .sig-block { flex: 1; text-align: center; }
+    .sig-line { border-bottom: 1px solid #333; height: 60px; margin: 8px 0; }
+    .sig-label { font-size: 11px; color: #666; text-transform: uppercase; }
+    .footer { margin-top: 32px; text-align: center; font-size: 11px; color: #999; border-top: 1px solid #eee; padding-top: 14px; }
+    .print-btn { position: fixed; top: 20px; right: 20px; background: #c17d2a; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: sans-serif; }
+    @media print { .print-btn { display: none; } }
+  </style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">🖨️ Imprimer / PDF</button>
+  <div class="header">
+    <div class="agency-name">MOVIA IMMO</div>
+    <div class="agency-sub">Agence Immobilière — Tanger, Maroc</div>
+    <div class="contract-title">${typeLabel[contract.type] || contract.type?.replace(/_/g, " ") || "Contrat de Location"}</div>
+    <div class="ref">Réf: ${contract.reference || "—"} &nbsp;|&nbsp; Signé le: ${new Date().toLocaleDateString("fr-FR")}</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Parties</div>
+    <div class="row">
+      <div class="field">
+        <div class="field-label">Locataire</div>
+        <div class="field-value">${contract.tenantName || "—"}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Bien loué</div>
+        <div class="field-value">${contract.propertyTitle || "—"}</div>
+      </div>
+    </div>
+    ${contract.witnessName ? `<div class="row">
+      <div class="field"><div class="field-label">Témoin</div><div class="field-value">${contract.witnessName}</div></div>
+      <div class="field"><div class="field-label">Téléphone témoin</div><div class="field-value">${contract.witnessPhone || "—"}</div></div>
+    </div>` : ""}
+  </div>
+
+  <div class="section">
+    <div class="section-title">Durée & Conditions financières</div>
+    <div class="row">
+      <div class="field"><div class="field-label">Date début</div><div class="field-value">${startDate}</div></div>
+      <div class="field"><div class="field-label">Date fin</div><div class="field-value">${endDate}</div></div>
+    </div>
+    <div class="row">
+      <div class="field"><div class="field-label">Loyer mensuel</div><div class="field-value amount">${Number(contract.rentAmount || 0).toLocaleString("fr-FR")} MAD</div></div>
+      <div class="field"><div class="field-label">Charges</div><div class="field-value amount">${Number(contract.chargesAmount || 0).toLocaleString("fr-FR")} MAD</div></div>
+      <div class="field"><div class="field-label">Caution</div><div class="field-value amount">${Number(contract.depositAmount || 0).toLocaleString("fr-FR")} MAD</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Conditions particulières</div>
+    <div class="conditions-box">${contract.specialConditions || "Néant"}</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Engagement des parties</div>
+    <p style="font-size:13px; color:#444">Le présent bail est conclu et accepté par les parties soussignées pour une durée débutant le <strong>${startDate}</strong> et se terminant le <strong>${endDate}</strong>, moyennant un loyer mensuel de <strong>${Number(contract.rentAmount || 0).toLocaleString("fr-FR")} MAD</strong>, plus charges de <strong>${Number(contract.chargesAmount || 0).toLocaleString("fr-FR")} MAD</strong>. Une caution équivalente à <strong>${Number(contract.depositAmount || 0).toLocaleString("fr-FR")} MAD</strong> a été versée préalablement.</p>
+  </div>
+
+  <div class="sigs">
+    <div class="sig-block">
+      <div class="sig-label">Le Propriétaire / L'Agence</div>
+      <div class="sig-line"></div>
+      <div style="font-size:12px; color:#666">Movia Immo — Représentant<br>Date: ___________</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-label">Le Locataire</div>
+      <div class="sig-line"></div>
+      <div style="font-size:12px; color:#666">${contract.tenantName || "Locataire"}<br>Date: ___________</div>
+    </div>
+    ${contract.witnessName ? `<div class="sig-block">
+      <div class="sig-label">Le Témoin</div>
+      <div class="sig-line"></div>
+      <div style="font-size:12px; color:#666">${contract.witnessName}<br>Date: ___________</div>
+    </div>` : ""}
+  </div>
+
+  <div class="footer">Movia Immo — Tanger, Maroc · Document généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}</div>
+</body>
+</html>`);
+  w.document.close();
+}
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -133,14 +251,25 @@ export default function Contrats() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                            onClick={() => openEdit(contract)}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              onClick={() => printBailContract(contract)}
+                              title="Imprimer / Télécharger PDF"
+                            >
+                              <Printer className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              onClick={() => openEdit(contract)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
